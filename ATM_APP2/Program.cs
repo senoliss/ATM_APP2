@@ -5,6 +5,8 @@
 		static string cardsFolderPath = "Cards";
 		static void Main(string[] args)
 		{
+			using var dbContext = new ATM_Context();
+
 			while (true)
 			{
 				Directory.CreateDirectory(cardsFolderPath);
@@ -18,7 +20,20 @@
 					string cardFilePath = Path.Combine(cardsFolderPath, $"{parsedGuid}.txt");
 					var data = LoadData(parsedGuid);
 
-					Login(ref parsedGuid, data);
+					// Checking if the card exists in database
+					var cardExists = dbContext.Accounts.Select(c => c.CardNumber.Equals(cardGuid));
+					if (cardExists == null)
+					{
+						// Inserting account data after creation, need to consider if card exists or not
+						var card = new Account(data.CardNumber, data.Pin, data.Balance);
+						dbContext.Accounts.Add(card);
+						dbContext.SaveChanges();
+					}
+					else
+					{
+                        Console.WriteLine("The card exists in database, pls write ur pin.");
+                    }
+                    Login(ref parsedGuid, data);
 					DisplayMenu(parsedGuid);
 				}
 				else
